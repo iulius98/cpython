@@ -103,6 +103,7 @@ struct _object {
     _PyObject_HEAD_EXTRA
     Py_ssize_t ob_refcnt;
     PyTypeObject *ob_type;
+    PyObject *contains_user_input;
 };
 
 /* Cast argument to PyObject* type. */

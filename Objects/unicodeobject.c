@@ -1413,6 +1413,11 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
             }
         }
     }
+    if (how_many > 0) {
+        if (PyObject_IsDangerous(from) && !PyObject_IsDangerous(to)) {
+            PyObject_MakeDangerous(to);
+        }
+    }
     return 0;
 }
 
@@ -10717,6 +10722,9 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
     _PyUnicode_FastCopyCharacters(result, 0, left, 0, left_len);
     _PyUnicode_FastCopyCharacters(result, left_len, right, 0, right_len);
     assert(_PyUnicode_CheckConsistency(result, 1));
+    if (PyObject_IsDangerous(left) || PyObject_IsDangerous(right)) {
+        PyObject_MakeDangerous(result);
+    }
     return result;
 }
 

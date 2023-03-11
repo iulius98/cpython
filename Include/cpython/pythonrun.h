@@ -44,6 +44,9 @@ PyAPI_FUNC(int) _PyRun_InteractiveLoopObject(
 PyAPI_FUNC(PyObject *) PyRun_StringFlags(const char *, int, PyObject *,
                                          PyObject *, PyCompilerFlags *);
 
+PyAPI_FUNC(PyObject*) PyRun_Advance_StringFlags(const char*, PyObject*, int, PyObject*,
+    PyObject*, PyCompilerFlags*);
+
 PyAPI_FUNC(PyObject *) PyRun_FileExFlags(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */

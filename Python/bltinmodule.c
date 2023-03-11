@@ -966,7 +966,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         str++;
 
     (void)PyEval_MergeCompilerFlags(&cf);
-    result = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
+    result = PyRun_Advance_StringFlags(str, source->contains_user_input, Py_eval_input, globals, locals, &cf);
     Py_XDECREF(source_copy);
     return result;
 }
@@ -1098,8 +1098,8 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         if (str == NULL)
             return NULL;
         if (PyEval_MergeCompilerFlags(&cf))
-            v = PyRun_StringFlags(str, Py_file_input, globals,
-                                  locals, &cf);
+            v = PyRun_Advance_StringFlags(str, source->contains_user_input, Py_file_input, globals,
+                locals, &cf);
         else
             v = PyRun_String(str, Py_file_input, globals, locals);
         Py_XDECREF(source_copy);
@@ -2247,7 +2247,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
                 return NULL;
             }
         }
-
+        PyObject_MakeDangerous(result);
         return result;
 
     _readline_errors:
@@ -3069,6 +3069,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("bytes",                 &PyBytes_Type);
     SETBUILTIN("classmethod",           &PyClassMethod_Type);
     SETBUILTIN("complex",               &PyComplex_Type);
+    SETBUILTIN("unsecure", &Unsecure_Type);
     SETBUILTIN("dict",                  &PyDict_Type);
     SETBUILTIN("enumerate",             &PyEnum_Type);
     SETBUILTIN("filter",                &PyFilter_Type);

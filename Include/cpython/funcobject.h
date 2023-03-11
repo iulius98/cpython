@@ -124,12 +124,14 @@ static inline PyObject* PyFunction_GET_ANNOTATIONS(PyObject *func) {
 }
 #define PyFunction_GET_ANNOTATIONS(func) PyFunction_GET_ANNOTATIONS(_PyObject_CAST(func))
 
-/* The classmethod and staticmethod types lives here, too */
+/* The unsecuremethod, classmethod and staticmethod types lives here, too */
 PyAPI_DATA(PyTypeObject) PyClassMethod_Type;
 PyAPI_DATA(PyTypeObject) PyStaticMethod_Type;
+PyAPI_DATA(PyTypeObject) Unsecure_Type;
 
 PyAPI_FUNC(PyObject *) PyClassMethod_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyStaticMethod_New(PyObject *);
+PyAPI_FUNC(PyObject*) PyDangerousMethod_New(PyObject*);
 
 #define FOREACH_FUNC_EVENT(V) \
     V(CREATE)                 \

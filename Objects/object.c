@@ -1734,7 +1734,7 @@ PyTypeObject _PyNone_Type = {
 
 PyObject _Py_NoneStruct = {
   _PyObject_EXTRA_INIT
-  1, &_PyNone_Type
+  1, &_PyNone_Type, Py_None
 };
 
 /* NotImplemented is an object that can be used to signal that an
@@ -1870,6 +1870,7 @@ static PyTypeObject* static_types[] = {
     &PyContextVar_Type,
     &PyContext_Type,
     &PyCoro_Type,
+    &Unsecure_Type,
     &PyDictItems_Type,
     &PyDictIterItem_Type,
     &PyDictIterKey_Type,
@@ -2457,6 +2458,14 @@ int Py_IsTrue(PyObject *x)
 int Py_IsFalse(PyObject *x)
 {
     return Py_Is(x, Py_False);
+}
+
+void PyObject_MakeDangerous(PyObject* obj) {
+    obj->contains_user_input = Py_True;
+}
+
+int PyObject_IsDangerous(PyObject* obj) {
+    return obj->contains_user_input == Py_True;
 }
 
 #ifdef __cplusplus

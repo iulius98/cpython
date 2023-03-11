@@ -1282,3 +1282,166 @@ PyStaticMethod_New(PyObject *callable)
     }
     return (PyObject *)sm;
 }
+
+typedef struct {
+    PyObject_HEAD
+    PyObject* un_callable;
+    PyObject* un_dict;
+} unsecure;
+
+static void
+un_dealloc(unsecure* un)
+{
+    _PyObject_GC_UNTRACK((PyObject*)un);
+    Py_XDECREF(un->un_callable);
+    Py_XDECREF(un->un_dict);
+    Py_TYPE(un)->tp_free((PyObject*)un);
+}
+
+static int
+un_traverse(unsecure* un, visitproc visit, void* arg)
+{
+    Py_VISIT(un->un_callable);
+    Py_VISIT(un->un_dict);
+    return 0;
+}
+
+static int
+un_clear(unsecure* un)
+{
+    Py_CLEAR(un->un_callable);
+    Py_CLEAR(un->un_dict);
+    return 0;
+}
+
+static PyObject*
+un_descr_get(PyObject* self, PyObject* obj, PyObject* type)
+{
+    unsecure* un = (unsecure*)self;
+
+    if (un->un_callable == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "uninitialized unsecure object");
+        return NULL;
+    }
+    return Py_NewRef(un->un_callable);
+}
+
+static int
+un_init(PyObject* self, PyObject* args, PyObject* kwds)
+{
+    unsecure* un = (unsecure*)self;
+    PyObject* callable;
+
+    if (!_PyArg_NoKeywords("unsecure", kwds))
+        return -1;
+    if (!PyArg_UnpackTuple(args, "unsecure", 1, 1, &callable))
+        return -1;
+    Py_XSETREF(un->un_callable, Py_NewRef(callable));
+
+    if (functools_wraps((PyObject*)un, un->un_callable) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject*
+un_call(PyObject* callable, PyObject* args, PyObject* kwargs)
+{
+    unsecure* un = (unsecure*)callable;
+    PyObject *result = PyObject_Call(un->un_callable, args, kwargs);
+    if (result != Py_None) {
+        PyObject_MakeDangerous(result);
+    }
+}
+
+static PyMemberDef un_memberlist[] = {
+    {"__func__", T_OBJECT, offsetof(unsecure, un_callable), READONLY},
+    {"__wrapped__", T_OBJECT, offsetof(unsecure, un_callable), READONLY},
+    {NULL}  /* Sentinel */
+};
+
+static PyObject*
+un_get___isabstractmethod__(unsecure* un, void* closure)
+{
+    int res = _PyObject_IsAbstract(un->un_callable);
+    if (res == -1) {
+        return NULL;
+    }
+    else if (res) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+static PyGetSetDef un_getsetlist[] = {
+    {"__isabstractmethod__",
+     (getter)un_get___isabstractmethod__, NULL, NULL, NULL},
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
+    {NULL} /* Sentinel */
+};
+
+static PyObject*
+un_repr(unsecure* un)
+{
+    return PyUnicode_FromFormat("<Unsecure_Type(%R)>", un->un_callable);
+}
+
+PyDoc_STRVAR(unsecure_doc,
+    "unsecure(function) -> method\n\
+\n\
+Is a annotation that help interpretor to identify the functions/method that can return a contaminated result \n\
+");
+
+PyTypeObject Unsecure_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "unsecure",
+    sizeof(unsecure),
+    0,
+    (destructor)un_dealloc,                     /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_as_async */
+    (reprfunc)un_repr,                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    un_call,                                    /* tp_call */
+    0,                                          /* tp_str */
+    0,                                          /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    unsecure_doc,                           /* tp_doc */
+    (traverseproc)un_traverse,                  /* tp_traverse */
+    (inquiry)un_clear,                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    0,                                          /* tp_methods */
+    un_memberlist,              /* tp_members */
+    un_getsetlist,                              /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    un_descr_get,                               /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    offsetof(unsecure, un_dict),            /* tp_dictoffset */
+    un_init,                                    /* tp_init */
+    PyType_GenericAlloc,                        /* tp_alloc */
+    PyType_GenericNew,                          /* tp_new */
+    PyObject_GC_Del,                            /* tp_free */
+};
+
+//PyObject*
+//PyDangerousMethod_New(PyObject* callable)
+//{
+//    dangerousmethod* dm = (dangerousmethod*)
+//        PyType_GenericAlloc(&PyDangerousMethod_Type, 0);
+//    if (dm != NULL) {
+//        dm->dm_callable = Py_NewRef(callable);
+//    }
+//    return (PyObject*)dm;
+//}

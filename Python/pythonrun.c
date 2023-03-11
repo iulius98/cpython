@@ -43,8 +43,10 @@ extern "C" {
 
 /* Forward */
 static void flush_io(void);
-static PyObject *run_mod(mod_ty, PyObject *, PyObject *, PyObject *,
+static PyObject* run_mod(mod_ty, PyObject *, PyObject *, PyObject *,
                           PyCompilerFlags *, PyArena *);
+static PyObject* run_advance_mod(mod_ty, PyObject*, PyObject*, PyObject*, PyObject*,
+    PyCompilerFlags*, PyArena*);
 static PyObject *run_pyc_file(FILE *, PyObject *, PyObject *,
                               PyCompilerFlags *);
 static int PyRun_InteractiveOneObjectEx(FILE *, PyObject *, PyCompilerFlags *);
@@ -1594,6 +1596,27 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     return ret;
 }
 
+PyObject* PyRun_Advance_StringFlags(const char* str, PyObject *contains_user_input, int start, PyObject* globals,
+    PyObject* locals, PyCompilerFlags* flags)
+{
+    PyObject* ret = NULL;
+    mod_ty mod;
+    PyArena* arena;
+
+    arena = _PyArena_New();
+    if (arena == NULL)
+        return NULL;
+
+    _Py_DECLARE_STR(anon_string, "<string>");
+    mod = _PyParser_ASTFromString(
+        str, &_Py_STR(anon_string), start, flags, arena);
+
+    if (mod != NULL)
+        ret = run_advance_mod(mod, contains_user_input, &_Py_STR(anon_string), globals, locals, flags, arena);
+    _PyArena_Free(arena);
+    return ret;
+}
+
 
 static PyObject *
 pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
@@ -1703,6 +1726,24 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     if (!v && _PyErr_Occurred(tstate) == PyExc_KeyboardInterrupt) {
         _PyRuntime.signals.unhandled_keyboard_interrupt = 1;
     }
+    return v;
+}
+
+static PyObject*
+run_advance_mod(mod_ty mod, PyObject *contains_user_input, PyObject* filename, PyObject* globals, PyObject* locals,
+    PyCompilerFlags* flags, PyArena* arena)
+{
+    PyThreadState* tstate = _PyThreadState_GET();
+    PyCodeObject* co = _PyAST_Compile(mod, filename, flags, -1, arena);
+    if (co == NULL)
+        return NULL;
+    if (_PySys_Audit(tstate, "exec", "OO", co, contains_user_input) < 0) {
+        Py_DECREF(co);
+        return NULL;
+    }
+
+    PyObject* v = run_eval_code_obj(tstate, co, globals, locals);
+    Py_DECREF(co);
     return v;
 }
 

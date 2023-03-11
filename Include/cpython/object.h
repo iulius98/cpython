@@ -548,3 +548,6 @@ PyAPI_FUNC(int) PyType_AddWatcher(PyType_WatchCallback callback);
 PyAPI_FUNC(int) PyType_ClearWatcher(int watcher_id);
 PyAPI_FUNC(int) PyType_Watch(int watcher_id, PyObject *type);
 PyAPI_FUNC(int) PyType_Unwatch(int watcher_id, PyObject *type);
+
+PyAPI_FUNC(void) PyObject_MakeDangerous(PyObject *obj);
+PyAPI_FUNC(int) PyObject_IsDangerous(PyObject * obj);
