@@ -505,6 +505,48 @@ exit:
     return return_value;
 }
 
+static PyObject *
+builtin_is_dangerous_impl(PyObject *el);
+static PyObject *
+builtin_is_dangerous(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *el;
+
+    if (!_PyArg_CheckPositional("is_dangerous", nargs, 1, 1)) {
+        Py_RETURN_FALSE;
+    }
+    el = args[0];
+    return builtin_is_dangerous_impl(el);
+}
+
+static PyObject *
+builtin_make_secure_impl(PyObject *el);
+static PyObject *
+builtin_make_secure(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *el;
+
+    if (!_PyArg_CheckPositional("make_secure", nargs, 1, 1)) {
+        Py_RETURN_FALSE;
+    }
+    el = args[0];
+    builtin_make_secure_impl(el);
+}
+
+static PyObject *
+builtin_make_dangerous_impl(PyObject *el);
+static PyObject *
+builtin_make_dangerous(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *el;
+
+    if (!_PyArg_CheckPositional("make_dangerous", nargs, 1, 1)) {
+        Py_RETURN_NONE;
+    }
+    el = args[0];
+    builtin_make_dangerous_impl(el);
+}
+
 PyDoc_STRVAR(builtin_exec__doc__,
 "exec($module, source, globals=None, locals=None, /, *, closure=None)\n"
 "--\n"

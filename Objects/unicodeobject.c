@@ -10176,6 +10176,8 @@ replace(PyObject *self, PyObject *str1,
     if (release2)
         PyMem_Free((void *)buf2);
     assert(_PyUnicode_CheckConsistency(u, 1));
+    if (!PyObject_IsDangerous(u) && (PyObject_IsDangerous(self) || PyObject_IsDangerous(str2)))
+        PyObject_MakeDangerous(u);
     return u;
 
   nothing:

@@ -1870,7 +1870,9 @@ static PyTypeObject* static_types[] = {
     &PyContextVar_Type,
     &PyContext_Type,
     &PyCoro_Type,
-    &Unsecure_Type,
+//    &Unsecure_Type,
+    &Secure_Type,
+    &Dangerous_Type,
     &PyDictItems_Type,
     &PyDictIterItem_Type,
     &PyDictIterKey_Type,
@@ -2462,6 +2464,10 @@ int Py_IsFalse(PyObject *x)
 
 void PyObject_MakeDangerous(PyObject* obj) {
     obj->contains_user_input = Py_True;
+}
+
+void PyObject_MakeSecure(PyObject* obj) {
+    obj->contains_user_input = Py_False;
 }
 
 int PyObject_IsDangerous(PyObject* obj) {

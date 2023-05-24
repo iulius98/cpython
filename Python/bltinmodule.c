@@ -287,9 +287,32 @@ Return the absolute value of the argument.
 
 static PyObject *
 builtin_abs(PyObject *module, PyObject *x)
-/*[clinic end generated code: output=b1b433b9e51356f5 input=bed4ca14e29c20d1]*/
 {
     return PyNumber_Absolute(x);
+}
+
+static PyObject *
+builtin_is_dangerous_impl(PyObject *el)
+{
+    if (PyObject_IsDangerous(el)) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+
+static PyObject *
+builtin_make_dangerous_impl(PyObject *el)
+{
+    PyObject_MakeDangerous(el);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+builtin_make_secure_impl(PyObject *el)
+{
+    PyObject_MakeSecure(el);
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -478,6 +501,21 @@ Call sys.breakpointhook(*args, **kws).  sys.breakpointhook() must accept\n\
 whatever arguments are passed.\n\
 \n\
 By default, this drops you into the pdb debugger.");
+
+PyDoc_STRVAR(is_dangerous_doc,
+"is_dangerous(object) -> True/False\n\
+\n\
+It's a function that help us to verify if an object is dangerous or not");
+
+PyDoc_STRVAR(make_dangerous_doc,
+"make_dangerous(object)\n\
+\n\
+It's a function that help mark us to make an object dangerous so is_dangerous function will return True on that object");
+
+PyDoc_STRVAR(make_secure_doc,
+"make_secure(object)\n\
+\n\
+It's a function that help mark us to make an object secure so is_dangerous function will return False on that object");
 
 typedef struct {
     PyObject_HEAD
@@ -2784,6 +2822,8 @@ zip_traverse(zipobject *lz, visitproc visit, void *arg)
     return 0;
 }
 
+
+
 static PyObject *
 zip_next(zipobject *lz)
 {
@@ -2962,6 +3002,8 @@ PyTypeObject PyZip_Type = {
 };
 
 
+
+
 static PyMethodDef builtin_methods[] = {
     {"__build_class__", _PyCFunction_CAST(builtin___build_class__),
      METH_FASTCALL | METH_KEYWORDS, build_class_doc},
@@ -2996,6 +3038,9 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_LOCALS_METHODDEF
     {"max", _PyCFunction_CAST(builtin_max), METH_VARARGS | METH_KEYWORDS, max_doc},
     {"min", _PyCFunction_CAST(builtin_min), METH_VARARGS | METH_KEYWORDS, min_doc},
+    {"make_dangerous", _PyCFunction_CAST(builtin_make_dangerous), METH_FASTCALL | METH_KEYWORDS, make_dangerous_doc},
+    {"is_dangerous", _PyCFunction_CAST(builtin_is_dangerous), METH_FASTCALL | METH_KEYWORDS, is_dangerous_doc},
+    {"make_secure", _PyCFunction_CAST(builtin_make_secure), METH_FASTCALL | METH_KEYWORDS, make_secure_doc},
     BUILTIN_NEXT_METHODDEF
     BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
@@ -3069,7 +3114,9 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("bytes",                 &PyBytes_Type);
     SETBUILTIN("classmethod",           &PyClassMethod_Type);
     SETBUILTIN("complex",               &PyComplex_Type);
-    SETBUILTIN("unsecure", &Unsecure_Type);
+//    SETBUILTIN("unsecure", &Unsecure_Type);
+    SETBUILTIN("secure", &Secure_Type);
+    SETBUILTIN("dangerous", &Dangerous_Type);
     SETBUILTIN("dict",                  &PyDict_Type);
     SETBUILTIN("enumerate",             &PyEnum_Type);
     SETBUILTIN("filter",                &PyFilter_Type);
