@@ -1,6 +1,7 @@
 import ast
 import operator as op
 import sys
+import inspect
 
 operators = {
     ast.Or: op.or_,
@@ -34,6 +35,24 @@ def eval_(node, dic):
     else:
         raise TypeError(node)
 
+def construct_param_dic(args, kwargs, fn):
+    pos_to_par_name = fn.__code__.co_varnames
+    parameters_signature = inspect.signature(fn).parameters
+    dangerous_dic = {}
+    for i in range(len(pos_to_par_name)):
+        param_value = None
+        param_key = pos_to_par_name[i]
+        if i < len(args):
+            param_value = args[i]
+        elif param_key in kwargs:
+            param_value = kwargs[param_key]
+        else:
+            param_value = parameters_signature[param_key].default if param_key in parameters_signature else None
+        param_is_dangerous = False if param_value is None else is_dangerous(param_value)
+        x_key = 'x_%s' % (str(i))
+        dangerous_dic[x_key] = param_is_dangerous
+    return dangerous_dic
+
 def unsecure(make_dangerous_expr = None):
     """
         it's a wrapper that help us to propagate the unsecure data
@@ -42,14 +61,7 @@ def unsecure(make_dangerous_expr = None):
         def unsecure_inner(*args, **kwargs):
             response = fn(*args, **kwargs)
             if (response is not None):
-                dangerous_dic = {}
-                for key in kwargs.keys():
-                    dangerous_dic[key] = is_dangerous(kwargs[key])
-                for i in range(len(args)):
-                    key = "x_%s"%(str(i))
-                    if (key in kwargs):
-                        raise SystemError("There two variables with the same name!")
-                    dangerous_dic[key] = is_dangerous(args[i])
+                dangerous_dic = construct_param_dic(args, kwargs, fn)
                 do_dangerous = sec_eval(make_dangerous_expr, dangerous_dic) if make_dangerous_expr != None else True
                 
                 if do_dangerous:
@@ -66,15 +78,8 @@ def code_injection(code_injection_expr):
     """
     def code_injection_outer(fn):
         def code_injection_inner(*args, **kwargs):
-            code_injection_dic = {}
-            for key in kwargs.keys():
-                code_injection_dic[key] = is_dangerous(kwargs[key])
-            for i in range(len(args)):
-                key = "x_%s"%(str(i))
-                if (key in kwargs):
-                    raise SystemError("There two variables with the same name!")
-                code_injection_dic[key] = is_dangerous(args[i])
-        
+            pos_to_par_name = fn.__code__.co_varnames
+            code_injection_dic = construct_param_dic(args, kwargs, fn)
             is_code_injection = sec_eval(code_injection_expr, code_injection_dic)
             
             sys.audit("code_injection", is_code_injection)
